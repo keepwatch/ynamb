@@ -3,9 +3,13 @@ import csv
 import sys
 import glob
 import argparse
+import datetime
 
 # Read cli options (argparse) / set default options
 parsedMappings = {'Date': 'Date', 'Description': 'Payee', 'Original Description': 'Memo'}
+todayString = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+ynabFieldnames = ['Date', 'Payee', 'Category', 'Memo', 'Outflow', 'Inflow']
+accountMappings = {}
 
 def arguments():
     """Parses command line arguments and sets defaults."""
@@ -16,10 +20,18 @@ def arguments():
 
 args = arguments()
 
-print "Using Mint CSV file {}".format(os.path.abspath(args.importFile))
+# Read an accounts mapping file
+if os.path.isfile('accountMappings.csv'):
+    with open('accountMappings.csv', 'r') as csvMapReadObject:
+        mapReader = csv.DictReader(csvMapReadObject)
+        for mapLine in mapReader:
+            accountMappings[mapLine['Mint']] = mapLine['YNAB']
+else:
+    accountMappings = {}
 
 # Read the transactions file
 tempEntryList = []
+print "Using Mint CSV file {}".format(os.path.abspath(args.importFile))
 with open(args.importFile, 'r') as csvReadObject:
     reader = csv.DictReader(csvReadObject)
 
@@ -27,7 +39,7 @@ with open(args.importFile, 'r') as csvReadObject:
     for line in reader:
         tempEntryList.append(line)
 
-# Read items from the temp list and pop them if they should be added to an account list (for item in tempList)
+# Read items from the temp list
 accountDict = {}
 
 for entry in tempEntryList:
@@ -48,9 +60,22 @@ for entry in tempEntryList:
                 sys.exit(0)
 
     # add tempDict to appropriate account in accountDict
-    if entry['Account Name'] not in accountDict:
-        accountDict[entry['Account Name']] = [tempDict]
+    if entry['Account Name'] in accountMappings:
+        accountName = accountMappings[entry['Account Name']]
     else:
-        accountDict[entry['Account Name']].append(tempDict)
+        accountName = entry['Account Name']
+
+    if accountName not in accountDict:
+        accountDict[accountName] = [tempDict]
+    else:
+        accountDict[accountName].append(tempDict)
 
 # Write the account lists (for account in accountList)
+for account in accountDict:
+    with open('{}_{}.csv'.format(todayString, account), 'w') as csvWriteObject:
+        csvDictWriter = csv.DictWriter(csvWriteObject, fieldnames=ynabFieldnames)
+
+        csvDictWriter.writeheader()
+
+        for transaction in accountDict[account]:
+            csvDictWriter.writerow(transaction)
