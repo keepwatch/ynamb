@@ -12,13 +12,17 @@ ynabFieldnames = ['Date', 'Payee', 'Category', 'Memo', 'Outflow', 'Inflow']
 accountMappings = {}
 
 def arguments():
-    """Parses command line arguments and sets defaults."""
+    '''Parses command line arguments and sets defaults.'''
     parser = argparse.ArgumentParser(description='Converts Mint CSV transactions into YNAB CSV import files, one for each account.')
     parser.add_argument('-if', '--importFile', default=max(glob.iglob('transactions*.csv'), key=os.path.getctime), 
         help='Optional: Define the full path to the Mint CSV import file. Default is the most recent transactions*.csv file in current directory.')
+    parser.add_argument('-ld', '--lastDate', default='01/01/1900',
+        help='Optional: Define a date (in %m/%d/%Y format) before which all transactions are ignored. Default is 01/01/1900.')
     return parser.parse_args()
 
 args = arguments()
+
+lastDate = datetime.datetime.strptime(args.lastDate, '%m/%d/%Y')
 
 # Read an accounts mapping file
 if os.path.isfile('accountMappings.csv'):
@@ -31,7 +35,7 @@ else:
 
 # Read the transactions file
 tempEntryList = []
-print "Using Mint CSV file {}".format(os.path.abspath(args.importFile))
+print 'Using Mint CSV file {}'.format(os.path.abspath(args.importFile))
 with open(args.importFile, 'r') as csvReadObject:
     reader = csv.DictReader(csvReadObject)
 
@@ -43,32 +47,45 @@ with open(args.importFile, 'r') as csvReadObject:
 accountDict = {}
 
 for entry in tempEntryList:
-    # parse Mint CSV format into YNAB CSV format
-    tempDict = {}
-    for detailItem in entry:
-        if detailItem in parsedMappings:
-            tempDict[parsedMappings[detailItem]] = entry[detailItem]
-        elif detailItem == 'Amount':
-            if entry['Transaction Type'] == 'debit':
-                tempDict['Outflow'] = entry['Amount']
-                tempDict['Inflow'] = 0
-            elif entry['Transaction Type'] == 'credit':
-                tempDict['Inflow'] = entry['Amount']
-                tempDict['Outflow'] = 0
-            else:
-                print "New transaction type observed - exiting."
-                sys.exit(0)
-
-    # add tempDict to appropriate account in accountDict
-    if entry['Account Name'] in accountMappings:
-        accountName = accountMappings[entry['Account Name']]
+    # ignore transactions before lastDate
+    if entry['Date'][1] == '/':
+        tempDate1 = '0' + entry['Date']
     else:
-        accountName = entry['Account Name']
+        tempDate1 = entry['Date']
 
-    if accountName not in accountDict:
-        accountDict[accountName] = [tempDict]
+    if tempDate1[4] == '/':
+        tempDate2 = tempDate1[:3] + '0' + tempDate1[3:]
     else:
-        accountDict[accountName].append(tempDict)
+        tempDate2 = tempDate1
+
+    if datetime.datetime.strptime(tempDate2, '%m/%d/%Y') > lastDate:
+
+        # parse Mint CSV format into YNAB CSV format
+        tempDict = {}
+        for detailItem in entry:
+            if detailItem in parsedMappings:
+                tempDict[parsedMappings[detailItem]] = entry[detailItem]
+            elif detailItem == 'Amount':
+                if entry['Transaction Type'] == 'debit':
+                    tempDict['Outflow'] = entry['Amount']
+                    tempDict['Inflow'] = 0
+                elif entry['Transaction Type'] == 'credit':
+                    tempDict['Inflow'] = entry['Amount']
+                    tempDict['Outflow'] = 0
+                else:
+                    print 'New transaction type observed - exiting.'
+                    sys.exit(0)
+
+        # add tempDict to appropriate account in accountDict
+        if entry['Account Name'] in accountMappings:
+            accountName = accountMappings[entry['Account Name']]
+        else:
+            accountName = entry['Account Name']
+
+        if accountName not in accountDict:
+            accountDict[accountName] = [tempDict]
+        else:
+            accountDict[accountName].append(tempDict)
 
 # Write the account lists (for account in accountList)
 for account in accountDict:
