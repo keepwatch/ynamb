@@ -11,10 +11,17 @@ todayString = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 ynabFieldnames = ['Date', 'Payee', 'Category', 'Memo', 'Outflow', 'Inflow']
 accountMappings = {}
 
+# Check for recent transactions.csv file in this directory
+try:
+    recentTransactionsFile = max(glob.iglob('transactions*.csv'), key=os.path.getctime)
+except ValueError:
+    print "No file name matching the pattern 'transactions*.csv' found. Make sure script and Mint transactions file are in same directory."
+    sys.exit(0)
+
 def arguments():
     '''Parses command line arguments and sets defaults.'''
     parser = argparse.ArgumentParser(description='Converts Mint CSV transactions into YNAB CSV import files, one for each account.')
-    parser.add_argument('-if', '--importFile', default=max(glob.iglob('transactions*.csv'), key=os.path.getctime), 
+    parser.add_argument('-if', '--importFile', default=recentTransactionsFile, 
         help='Optional: Define the full path to the Mint CSV import file. Default is the most recent transactions*.csv file in current directory.')
     parser.add_argument('-ld', '--lastDate', default='01/01/1900',
         help='Optional: Define a date (in %m/%d/%Y format) before which all transactions are ignored. Default is 01/01/1900.')
