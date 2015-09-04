@@ -24,7 +24,7 @@ def arguments():
     parser.add_argument('-if', '--importFile', default=recentTransactionsFile, 
         help='Optional: Define the full path to the Mint CSV import file. Default is the most recent transactions*.csv file in current directory.')
     parser.add_argument('-ld', '--lastDate', default='01/01/1900',
-        help='Optional: Define a date (in %m/%d/%Y format) before which all transactions are ignored. Default is 01/01/1900.')
+        help='Optional: Define a date (in mm/dd/YYYY format) before which all transactions are ignored. Default is 01/01/1900.')
     return parser.parse_args()
 
 args = arguments()
