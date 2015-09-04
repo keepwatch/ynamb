@@ -22,9 +22,9 @@ YNAB (You Need a Budget) is a popular tool for managing income, expenses, and bu
 
 1. Install the appropriate version of Python (2.7.9+)
 2. Download the Python script and place it in a directory.
-3. Download your Mint transactions as a single CSV file and save it in the same directory as the Python script
+3. [Download your Mint transactions](https://mint.lc.intuit.com/questions/950809-how-do-i-export-transactions) as a single CSV file and save it in the same directory as the Python script
 4. Run the script using the syntax above.
-5. Take the output files that result (one per Mint account) and import them into the appropriate Mint account.
+5. Take the output files that result (one per Mint account) and [import them into the appropriate YNAB account](http://www.youneedabudget.com/support/article/how-to-import-transactions).
 
 ### Account Mapping Feature
 Since Mint and YNAB account names could be vastly different, the script supports an account mapping feature. To enable, 
