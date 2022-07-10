@@ -15,7 +15,7 @@ accountMappings = {}
 try:
     recentTransactionsFile = max(glob.iglob('transactions*.csv'), key=os.path.getctime)
 except ValueError:
-    print "No file name matching the pattern 'transactions*.csv' found. Make sure script and Mint transactions file are in same directory."
+    print("No file name matching the pattern 'transactions*.csv' found. Make sure script and Mint transactions file are in same directory.")
     sys.exit(0)
 
 def arguments():
@@ -42,7 +42,7 @@ else:
 
 # Read the transactions file
 tempEntryList = []
-print 'Using Mint CSV file {}'.format(os.path.abspath(args.importFile))
+print('Using Mint CSV file {}'.format(os.path.abspath(args.importFile)))
 with open(args.importFile, 'r') as csvReadObject:
     reader = csv.DictReader(csvReadObject)
 
@@ -80,7 +80,7 @@ for entry in tempEntryList:
                     tempDict['Inflow'] = entry['Amount']
                     tempDict['Outflow'] = 0
                 else:
-                    print 'New transaction type observed - exiting.'
+                    print('New transaction type observed - exiting.')
                     sys.exit(0)
 
         # add tempDict to appropriate account in accountDict
